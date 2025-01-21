@@ -29,7 +29,7 @@ export interface Article {
   author_id: string;
   category_id: string;
   subcategory_id?: string;
-  description: any; // Rich text editor content
+  description: string; // Rich text editor content
   audio_url?: string;
   youtube_url?: string;
   external_video_url?: string;

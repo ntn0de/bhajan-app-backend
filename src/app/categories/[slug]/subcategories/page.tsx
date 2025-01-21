@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Subcategory } from "@/types";
 
 async function getSubCategories(slug: string) {
   const { data: category, error } = await supabase
@@ -40,7 +41,7 @@ export default async function SubCategoryPage({
       <div className="mb-12">
         <h2 className="text-2xl font-semibold mb-6">Subcategories</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {category.subcategories.map((sub) => (
+          {category.subcategories.map((sub: Subcategory) => (
             <Link
               key={sub.id}
               href={`/categories/${category.slug}/subcategories/${sub.slug}`}

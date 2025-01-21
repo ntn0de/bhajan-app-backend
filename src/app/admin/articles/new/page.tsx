@@ -112,7 +112,7 @@ export default function NewArticle() {
       };
 
       // Insert the article into Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("articles")
         .insert([articleData])
         .select()

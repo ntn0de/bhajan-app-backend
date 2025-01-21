@@ -1,28 +1,29 @@
-import { supabase } from '@/lib/supabase';
-import FeaturedArticles from '@/components/FeaturedArticles';
-import FeaturedCategories from '@/components/FeaturedCategories';
+import { supabase } from "@/lib/supabase";
+import FeaturedArticles from "@/components/FeaturedArticles";
+import { Article } from "@/types";
+// import FeaturedCategories from '@/components/FeaturedCategories';
 
 export default async function Home() {
   const { data: featuredArticles } = await supabase
-    .from('articles')
-    .select('*, categories(*)')
-    .eq('is_featured', true)
+    .from("articles")
+    .select("*, categories(*)")
+    .eq("is_featured", true)
     .limit(6);
-
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*, subcategories(*)');
+  const articles: Article[] = featuredArticles ?? [];
+  // const { data: categories } = await supabase
+  //   .from("categories")
+  //   .select("*, subcategories(*)");
 
   return (
     <main className="container mx-auto px-4 py-8">
       <section className="mb-12">
         <h2 className="text-3xl font-bold mb-6">Featured Articles</h2>
-        <FeaturedArticles articles={featuredArticles} />
+        <FeaturedArticles articles={articles} />
       </section>
 
       <section>
         <h2 className="text-3xl font-bold mb-6">Featured Categories</h2>
-        <FeaturedCategories categories={categories} />
+        {/* <FeaturedCategories categories={categories} /> */}
       </section>
     </main>
   );

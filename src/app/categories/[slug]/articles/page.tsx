@@ -1,16 +1,19 @@
-import { supabase } from '@/lib/supabase';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import { supabase } from "@/lib/supabase";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Article, Subcategory } from "@/types";
 
 async function getCategoryWithContent(slug: string) {
   const { data: category, error } = await supabase
-    .from('categories')
-    .select(`
+    .from("categories")
+    .select(
+      `
       *,
       subcategories(*),
       articles(*)
-    `)
-    .eq('slug', slug)
+    `
+    )
+    .eq("slug", slug)
     .single();
 
   if (error || !category) {
@@ -20,8 +23,13 @@ async function getCategoryWithContent(slug: string) {
   return category;
 }
 
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
-  const category = await getCategoryWithContent(params.slug);
+export default async function CategoryPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const category = await getCategoryWithContent(slug);
 
   if (!category) {
     notFound();
@@ -36,7 +44,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
         <div className="mb-12">
           <h2 className="text-2xl font-semibold mb-6">Subcategories</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {category.subcategories.map((sub) => (
+            {category.subcategories.map((sub: Subcategory) => (
               <Link
                 key={sub.id}
                 href={`/categories/${category.slug}/subcategories/${sub.slug}`}
@@ -51,7 +59,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
       ) : (
         // Show articles if no subcategories
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {category.articles.map((article) => (
+          {category.articles.map((article: Article) => (
             <Link
               key={article.id}
               href={`/articles/${article.slug}`}

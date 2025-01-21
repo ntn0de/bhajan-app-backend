@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { Category, Subcategory } from "@/types";
 
 export default function CategoryManagement() {
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
   const [newCategory, setNewCategory] = useState({ name: "", image_url: "" });
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
   const [newSubcategory, setNewSubcategory] = useState({ name: "" });
 
   // Fetch categories with their subcategories
@@ -29,8 +33,7 @@ export default function CategoryManagement() {
       console.error("Error fetching categories:", error);
       return;
     }
-
-    setCategories(data || []);
+    setCategories(data);
   };
 
   useEffect(() => {
@@ -38,7 +41,7 @@ export default function CategoryManagement() {
   }, []);
 
   // Add new category
-  const handleAddCategory = async (e) => {
+  const handleAddCategory = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const slug = newCategory.name
@@ -64,8 +67,12 @@ export default function CategoryManagement() {
   };
 
   // Add new subcategory
-  const handleAddSubcategory = async (e) => {
+  const handleAddSubcategory = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!selectedCategory) {
+      console.error("No category selected for adding subcategory.");
+      return;
+    }
 
     const slug = newSubcategory.name
       .toLowerCase()
@@ -148,7 +155,7 @@ export default function CategoryManagement() {
               <div className="mb-4">
                 <h4 className="font-medium mb-2">Subcategories:</h4>
                 <ul className="list-disc pl-5 space-y-1">
-                  {category.subcategories?.map((sub) => (
+                  {category.subcategories?.map((sub: Subcategory) => (
                     <li key={sub.id} className="text-sm">
                       {sub.name}{" "}
                       <span className="text-gray-500">({sub.slug})</span>

@@ -7,6 +7,7 @@ export interface Category {
   slug: string; // URL-friendly version of the name
   image_url: string; // URL to the category's image
   created_at: string; // Timestamp of creation
+  subcategories: Subcategory[]; // Subcategories associated with the category
 }
 
 // Represents a subcategory that belongs to a category
@@ -26,7 +27,7 @@ export interface Article {
   author_id: string; // Reference to the author (from auth.users)
   category_id: string; // Reference to the category
   subcategory_id?: string; // Optional reference to subcategory
-  description: any; // Rich text content (could be more specifically typed based on your editor)
+  description: string; // Rich text content (could be more specifically typed based on your editor)
   featured_image?: string; // Optional URL to featured image
   audio_url?: string; // Optional URL to audio content
   youtube_url?: string; // Optional URL to YouTube video
