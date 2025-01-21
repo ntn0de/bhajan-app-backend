@@ -12,6 +12,9 @@ export default function AdminNav() {
           <Link href="/admin/categories" className="hover:text-gray-300">
             Manage Categories
           </Link>
+          <Link href="/admin/articles" className="hover:text-gray-300">
+            Manage Articles
+          </Link>
           <Link href="/admin/articles/new" className="hover:text-gray-300">
             New Article
           </Link>
