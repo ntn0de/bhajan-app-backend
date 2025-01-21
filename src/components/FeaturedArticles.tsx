@@ -16,14 +16,6 @@ export default function FeaturedArticles({
             href={`/articles/${article.slug}`}
             className="group hover:shadow-lg transition-shadow duration-200 rounded-lg overflow-hidden"
           >
-            <div className="aspect-video relative">
-              <Image
-                src={article.featured_image || "/placeholder.jpg"}
-                alt={article.title}
-                fill
-                className="object-cover"
-              />
-            </div>
             <div className="p-4">
               <h3 className="text-xl font-semibold mb-2">{article.title}</h3>
               <p className="text-gray-600 line-clamp-2">

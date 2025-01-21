@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { supabase } from "@/lib/supabase";
 import { Category, Subcategory } from "@/types";
 
@@ -96,6 +96,39 @@ export default function CategoryManagement() {
     fetchCategories();
   };
 
+  const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    console.log(file);
+    if (!file) {
+      console.error("No file selected for upload.");
+      return;
+    }
+    const categoryNameSlug = newCategory.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    const fileName = `${Date.now()}_${categoryNameSlug}`;
+    const { data, error } = await supabase.storage
+      .from("images")
+      .upload(`categories/${fileName}`, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (error) {
+      console.error("Error uploading image:", error);
+      return;
+    }
+
+    const publicUrl = supabase.storage
+      .from("images")
+      .getPublicUrl(`categories/${fileName}`).data?.publicUrl;
+
+    if (publicUrl) {
+      setNewCategory((prev) => ({ ...prev, image_url: publicUrl }));
+    }
+  };
+
   return (
     <div>
       <div className="container mx-auto p-6">
@@ -121,21 +154,32 @@ export default function CategoryManagement() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                Image URL
+                Image{" "}
+                {newCategory.name == "" ? "(Type category name first)" : false}
               </label>
-              <input
-                type="url"
-                value={newCategory.image_url}
-                onChange={(e) =>
-                  setNewCategory({ ...newCategory, image_url: e.target.value })
-                }
-                className="w-full px-3 py-2 border rounded"
-                required
-              />
+              <div className="mt-2">
+                <label
+                  className={`px-4 py-2  text-white rounded hover:bg-blue-700 cursor-pointer inline-block ${
+                    newCategory.name == ""
+                      ? "bg-gray-400 opacity-50"
+                      : "bg-blue-600"
+                  }`}
+                >
+                  Upload Image
+                  <input
+                    disabled={newCategory.name == "" ? true : false}
+                    type="file"
+                    onChange={uploadImage}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ${
+                newCategory.image_url == "" ? "bg-gray-400 opacity-50" : ""
+              }`}
             >
               Add Category
             </button>

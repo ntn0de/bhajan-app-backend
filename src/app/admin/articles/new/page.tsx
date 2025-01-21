@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Category, Subcategory } from "@/types";
+import { slugify } from "transliteration";
 
 const Editor = dynamic(() => import("@/components/TextEditor"), {
   ssr: false, // Ensure it's client-side only
@@ -94,10 +95,7 @@ export default function NewArticle() {
       }
 
       // Create slug from title
-      const slug = formData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+      const slug = slugify(formData.title);
 
       // Prepare the article data
       const articleData = {

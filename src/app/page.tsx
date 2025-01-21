@@ -7,7 +7,7 @@ export default async function Home() {
   const { data: featuredArticles } = await supabase
     .from("articles")
     .select("*, categories(*)")
-    .eq("is_featured", true)
+    // .eq("is_featured", true)
     .limit(6);
   const articles: Article[] = featuredArticles ?? [];
   // const { data: categories } = await supabase
