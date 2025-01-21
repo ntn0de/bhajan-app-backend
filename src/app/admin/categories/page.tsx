@@ -3,6 +3,7 @@
 import { useState, useEffect, ChangeEvent } from "react";
 import { supabase } from "@/lib/supabase";
 import { Category, Subcategory } from "@/types";
+import { slugify } from "transliteration";
 
 export default function CategoryManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -11,6 +12,7 @@ export default function CategoryManagement() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
+  const [deleteCategory, setDeleteCategory] = useState<boolean>(false);
   const [newSubcategory, setNewSubcategory] = useState({ name: "" });
 
   // Fetch categories with their subcategories
@@ -44,10 +46,7 @@ export default function CategoryManagement() {
   const handleAddCategory = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const slug = newCategory.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+    const slug = slugify(newCategory.name);
 
     const { error } = await supabase.from("categories").insert([
       {
@@ -74,10 +73,7 @@ export default function CategoryManagement() {
       return;
     }
 
-    const slug = newSubcategory.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+    const slug = slugify(newSubcategory.name);
 
     const { error } = await supabase.from("subcategories").insert([
       {
@@ -128,6 +124,36 @@ export default function CategoryManagement() {
       setNewCategory((prev) => ({ ...prev, image_url: publicUrl }));
     }
   };
+  const deleteSelectedCategory = async (category: Category) => {
+    try {
+      await supabase.from("categories").delete().eq("id", category.id);
+      await supabase
+        .from("subcategories")
+        .delete()
+        .eq("category_id", category.id);
+      // refresh categories
+      fetchCategories();
+      // toast.success("Category deleted successfully!");
+      console.log("Category deleted successfully!");
+      setSelectedCategory(null);
+      setDeleteCategory(false);
+    } catch (error) {
+      // toast.error("Error deleting category!");
+      console.log("Error deleting category!");
+    }
+  };
+  const deleteSelectedSubCategory = async (sub: Subcategory) => {
+    try {
+      await supabase.from("subcategories").delete().eq("id", sub.id);
+      // refresh categories
+      fetchCategories();
+      // toast.success("Subcategory deleted successfully!");
+      console.log("Subcategory deleted successfully!");
+    } catch (error) {
+      // toast.error("Error deleting subcategory!");
+      console.log("Error deleting subcategory!");
+    }
+  };
 
   return (
     <div>
@@ -135,7 +161,7 @@ export default function CategoryManagement() {
         <h1 className="text-3xl font-bold mb-6">Category Management</h1>
 
         {/* Add Category Form */}
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <div className="bg-white p-6 rounded-lg shadow mb-6 dark:bg-gray-800">
           <h2 className="text-xl font-semibold mb-4">Add New Category</h2>
           <form onSubmit={handleAddCategory} className="space-y-4">
             <div>
@@ -148,7 +174,7 @@ export default function CategoryManagement() {
                 onChange={(e) =>
                   setNewCategory({ ...newCategory, name: e.target.value })
                 }
-                className="w-full px-3 py-2 border rounded"
+                className="w-full px-3 py-2 border rounded dark:border-gray-700 dark:text-black"
                 required
               />
             </div>
@@ -189,7 +215,10 @@ export default function CategoryManagement() {
         {/* Categories List */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {categories.map((category) => (
-            <div key={category.id} className="bg-white p-6 rounded-lg shadow">
+            <div
+              key={category.id}
+              className="bg-white p-6 rounded-lg shadow dark:bg-gray-800"
+            >
               <h3 className="text-lg font-semibold mb-2">{category.name}</h3>
               <p className="text-sm text-gray-500 mb-4">
                 Slug: {category.slug}
@@ -203,6 +232,14 @@ export default function CategoryManagement() {
                     <li key={sub.id} className="text-sm">
                       {sub.name}{" "}
                       <span className="text-gray-500">({sub.slug})</span>
+                      <button
+                        onClick={() => {
+                          deleteSelectedSubCategory(sub);
+                        }}
+                        className="text-white-600 hover:text-red-800 rounded-full bg-red-800 hover:bg-white px-1 ml-2 cursor-pointer"
+                      >
+                        x
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -215,14 +252,24 @@ export default function CategoryManagement() {
               >
                 Add Subcategory
               </button>
+              {/* Remove Category Modal */}
+              <button
+                onClick={() => {
+                  setSelectedCategory(category);
+                  setDeleteCategory(true);
+                }}
+                className="text-red-600 hover:text-red-800"
+              >
+                Remove Category
+              </button>
             </div>
           ))}
         </div>
 
         {/* Add Subcategory Modal */}
-        {selectedCategory && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white p-6 rounded-lg w-full max-w-md">
+        {selectedCategory && !deleteCategory && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md dark:bg-gray-800">
               <h2 className="text-xl font-semibold mb-4">
                 Add Subcategory to {selectedCategory.name}
               </h2>
@@ -240,7 +287,7 @@ export default function CategoryManagement() {
                         name: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full px-3 py-2 border rounded dark:border-gray-700 dark:text-black"
                     required
                   />
                 </div>
@@ -260,6 +307,22 @@ export default function CategoryManagement() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        {/* Delete Category Modal */}
+        {selectedCategory && deleteCategory && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md dark:bg-gray-800">
+              <h2 className="text-xl font-semibold mb-4">
+                Are you sure you want to delete this category?
+              </h2>
+              <button
+                onClick={() => deleteSelectedCategory(selectedCategory)}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete Category
+              </button>
             </div>
           </div>
         )}

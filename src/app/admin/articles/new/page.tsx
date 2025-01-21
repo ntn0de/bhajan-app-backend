@@ -144,7 +144,7 @@ export default function NewArticle() {
           type="text"
           value={formData.title}
           onChange={(e) => handleChange("title", e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg"
+          className="w-full px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black"
           required
         />
       </div>
@@ -157,7 +157,7 @@ export default function NewArticle() {
         <select
           value={formData.categoryId}
           onChange={(e) => handleChange("categoryId", e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg"
+          className="w-full px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black"
           required
         >
           <option value="">Select a category</option>
@@ -176,7 +176,7 @@ export default function NewArticle() {
           <select
             value={formData.subcategoryId}
             onChange={(e) => handleChange("subcategoryId", e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg"
+            className="w-full px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black"
           >
             <option value="">Select a subcategory</option>
             {subcategories.map((subcategory) => (
@@ -208,7 +208,7 @@ export default function NewArticle() {
             type="url"
             value={formData.audioUrl}
             onChange={(e) => handleChange("audioUrl", e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg"
+            className="w-full px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black"
           />
         </div>
 
@@ -218,7 +218,7 @@ export default function NewArticle() {
             type="url"
             value={formData.youtubeUrl}
             onChange={(e) => handleChange("youtubeUrl", e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg"
+            className="w-full px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black"
           />
         </div>
       </div>

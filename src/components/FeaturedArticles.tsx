@@ -18,9 +18,6 @@ export default function FeaturedArticles({
           >
             <div className="p-4">
               <h3 className="text-xl font-semibold mb-2">{article.title}</h3>
-              <p className="text-gray-600 line-clamp-2">
-                {article.description.substring(0, 150)}...
-              </p>
             </div>
           </Link>
         ))}

@@ -61,7 +61,7 @@ export default function ArticleManagement() {
           {articles.map((article) => (
             <div
               key={article.id}
-              className="bg-white p-6 rounded-lg shadow relative"
+              className="bg-white p-6 rounded-lg shadow relative dark:bg-gray-800"
             >
               <h3 className="text-lg font-semibold mb-2">
                 <Link href={`/articles/${article.slug}`}>{article.title}</Link>
