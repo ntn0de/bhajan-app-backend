@@ -145,8 +145,8 @@ const useCategoryState = () => {
   const handleDelete = useCallback(
     async (
       type: "category" | "subcategory",
-      id: string,
-      categoryId?: string
+      subId: string,
+      category: Category
     ) => {
       setIsLoading(true);
       try {
@@ -154,16 +154,18 @@ const useCategoryState = () => {
           const { error } = await supabase
             .from("subcategories")
             .delete()
-            .eq("id", id);
+            .eq("id", subId);
           if (error) throw error;
 
           setCategories((prev) =>
             prev.map((cat) =>
-              cat.id === categoryId
+              cat.id === category.id
                 ? {
                     ...cat,
                     subcategories:
-                      cat.subcategories?.filter((sub) => sub.id !== id) || [],
+                      cat.subcategories?.filter(
+                        (sub) => sub.id !== category.id
+                      ) || [],
                   }
                 : cat
             )
@@ -172,10 +174,23 @@ const useCategoryState = () => {
           const { error } = await supabase
             .from("categories")
             .delete()
-            .eq("id", id);
+            .eq("id", category.id);
+          // also delete image
+          console.log({ category });
+          // get last file name from "https://bddvcuswobczqbyjlevs.supabase.co/storage/v1/object/public/images/categories/1737470923362_ii-raaj-caaliisaa"
+          const imageUrl = category.image_url.split("/").slice(-1)[0];
+          try {
+            console.log({ imageUrl });
+            await supabase.storage
+              .from("images")
+              .remove([`categories/${imageUrl}`]);
+          } catch (error) {
+            console.error(`Error deleting iamge:`, error);
+          }
+
           if (error) throw error;
 
-          setCategories((prev) => prev.filter((c) => c.id !== id));
+          setCategories((prev) => prev.filter((c) => c.id !== category.id));
           setSelectedCategory(null);
           setDeleteModalOpen(false);
         }
