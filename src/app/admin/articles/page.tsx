@@ -61,35 +61,40 @@ export default function ArticleManagement() {
           {articles.map((article) => (
             <div
               key={article.id}
-              className="bg-white p-6 rounded-lg shadow relative dark:bg-gray-800"
+              className="bg-white p-6 rounded-lg shadow  dark:bg-gray-800"
             >
               <h3 className="text-lg font-semibold mb-2">
                 <Link href={`/articles/${article.slug}`}>{article.title}</Link>
               </h3>
               <p className="text-sm text-gray-500 mb-4">Slug: {article.slug}</p>
-              <p className="text-sm text-gray-500 mb-4">
-                Featured: {article.is_featured ? "Yes" : "No"}
-              </p>
-              <label className="inline-flex items-center cursor-pointer absolute right-4 top-4">
+
+              <label className="inline-flex items-center cursor-pointer relative ">
                 <input
                   type="checkbox"
                   className="sr-only peer"
                   checked={article.is_featured}
                   onChange={() => toggleFeatured(article)}
                 />
-                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                <div className=" w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                 <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-                  Featured
+                  {article.is_featured ? "" : "Not"} Featured
                 </span>
               </label>
-
-              {/* Delete Article */}
-              <button
-                onClick={() => deleteArticle(article)}
-                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
-              >
-                Delete Article
-              </button>
+              <div className="flex gap-1">
+                {/* Delete Article */}
+                <button
+                  onClick={() => deleteArticle(article)}
+                  className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                >
+                  Delete Article
+                </button>
+                <Link
+                  className="px-4 py-3 rounded bg-blue-600 text-white hover:bg-blue-700"
+                  href={`/admin/articles/${article.id}/edit`}
+                >
+                  Edit
+                </Link>
+              </div>
             </div>
           ))}
         </div>
