@@ -1,8 +1,7 @@
-// useCategoryState.ts
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "transliteration";
-import { Article, Category, Subcategory } from "@/types";
+import { Category, Subcategory } from "@/types";
 
 const useCategoryState = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -13,6 +12,10 @@ const useCategoryState = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [newSubcategory, setNewSubcategory] = useState({ name: "" });
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleError = (message: string, error: any) => {
+    console.error(`${message}:`, error);
+  };
 
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
@@ -34,9 +37,34 @@ const useCategoryState = () => {
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      handleError("Error fetching categories", error);
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  const uploadImage = useCallback(async (file: File, categoryName: string) => {
+    const categoryNameSlug = slugify(categoryName);
+    const fileName = `${Date.now()}_${categoryNameSlug}`;
+
+    try {
+      const { error } = await supabase.storage
+        .from("images")
+        .upload(`categories/${fileName}`, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("images")
+        .getPublicUrl(`categories/${fileName}`);
+
+      return urlData?.publicUrl || "";
+    } catch (error) {
+      handleError("Error uploading image", error);
+      return "";
     }
   }, []);
 
@@ -45,32 +73,10 @@ const useCategoryState = () => {
       const file = e.target.files?.[0];
       if (!file || !newCategory.name) return;
 
-      const categoryNameSlug = slugify(newCategory.name);
-      const fileName = `${Date.now()}_${categoryNameSlug}`;
-
-      try {
-        const { data, error } = await supabase.storage
-          .from("images")
-          .upload(`categories/${fileName}`, file, {
-            cacheControl: "3600",
-            upsert: true,
-          });
-
-        if (error) throw error;
-
-        const { data: urlData } = supabase.storage
-          .from("images")
-          .getPublicUrl(`categories/${fileName}`);
-
-        setNewCategory((prev) => ({
-          ...prev,
-          image_url: urlData?.publicUrl || "",
-        }));
-      } catch (error) {
-        console.error("Error uploading image:", error);
-      }
+      const imageUrl = await uploadImage(file, newCategory.name);
+      setNewCategory((prev) => ({ ...prev, image_url: imageUrl }));
     },
-    [newCategory.name]
+    [newCategory.name, uploadImage]
   );
 
   const handleAddCategory = useCallback(
@@ -92,7 +98,7 @@ const useCategoryState = () => {
         await fetchCategories();
         setNewCategory({ name: "", image_url: "" });
       } catch (error) {
-        console.error("Error adding category:", error);
+        handleError("Error adding category", error);
       } finally {
         setIsLoading(false);
       }
@@ -121,20 +127,20 @@ const useCategoryState = () => {
 
         if (error) throw error;
 
-        const updatedCategory = {
-          ...selectedCategory,
-          subcategories: [...(selectedCategory.subcategories || []), data],
-        };
-
-        setCategories((prevCategories) =>
-          prevCategories.map((cat) =>
-            cat.id === updatedCategory.id ? updatedCategory : cat
+        setCategories((prev) =>
+          prev.map((cat) =>
+            cat.id === selectedCategory.id
+              ? {
+                  ...cat,
+                  subcategories: [...(cat.subcategories || []), data],
+                }
+              : cat
           )
         );
         setNewSubcategory({ name: "" });
         setSelectedCategory(null);
       } catch (error) {
-        console.error("Error adding subcategory:", error);
+        handleError("Error adding subcategory", error);
       } finally {
         setIsLoading(false);
       }
@@ -151,6 +157,17 @@ const useCategoryState = () => {
       setIsLoading(true);
       try {
         if (type === "subcategory") {
+          const { error: articleError } = await supabase
+            .from("articles")
+            .update({
+              subcategory_id: null,
+            })
+            .eq("subcategory_id", subId);
+          if (articleError)
+            handleError(
+              "Error unlinking subcategory from article",
+              articleError
+            );
           const { error } = await supabase
             .from("subcategories")
             .delete()
@@ -163,43 +180,37 @@ const useCategoryState = () => {
                 ? {
                     ...cat,
                     subcategories:
-                      cat.subcategories?.filter(
-                        (sub) => sub.id !== category.id
-                      ) || [],
+                      cat.subcategories?.filter((sub) => sub.id !== subId) ||
+                      [],
                   }
                 : cat
             )
           );
         } else if (type === "category") {
-          const { error: articlesError } = await supabase
+          await supabase
             .from("articles")
-            .update({ category_id: null, subcategory_id: null })
+            .update({
+              category_id: null,
+              subcategory_id: null,
+            })
             .eq("category_id", category.id);
-          if (articlesError) throw articlesError;
 
-          const { error: subcategoriesError } = await supabase
+          await supabase
             .from("subcategories")
             .delete()
             .eq("category_id", category.id);
-          if (subcategoriesError) throw subcategoriesError;
+
+          const imageName = category.image_url.split("/").pop();
+          if (imageName) {
+            await supabase.storage
+              .from("images")
+              .remove([`categories/${imageName}`]);
+          }
 
           const { error } = await supabase
             .from("categories")
             .delete()
             .eq("id", category.id);
-          if (error) throw error;
-          // also delete image
-          console.log({ category });
-          // get last file name from "https://bddvcuswobczqbyjlevs.supabase.co/storage/v1/object/public/images/categories/1737470923362_ii-raaj-caaliisaa"
-          const imageUrl = category.image_url.split("/").slice(-1)[0];
-          try {
-            await supabase.storage
-              .from("images")
-              .remove([`categories/${imageUrl}`]);
-          } catch (error) {
-            console.error(`Error deleting iamge:`, error);
-          }
-
           if (error) throw error;
 
           setCategories((prev) => prev.filter((c) => c.id !== category.id));
@@ -207,7 +218,7 @@ const useCategoryState = () => {
           setDeleteModalOpen(false);
         }
       } catch (error) {
-        console.error(`Error deleting ${type}:`, error);
+        handleError(`Error deleting ${type}`, error);
       } finally {
         setIsLoading(false);
       }
