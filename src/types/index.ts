@@ -8,6 +8,7 @@ export interface Category {
   image_url: string; // URL to the category's image
   created_at: string; // Timestamp of creation
   subcategories: Subcategory[]; // Subcategories associated with the category
+  articles: Article[]; // Articles associated with the category
 }
 
 // Represents a subcategory that belongs to a category
@@ -17,6 +18,7 @@ export interface Subcategory {
   name: string; // Display name of the subcategory
   slug: string; // URL-friendly version of the name
   created_at: string; // Timestamp of creation
+  articles: Article[]; // Articles associated with the subcategory
 }
 
 // Represents the structure of an article

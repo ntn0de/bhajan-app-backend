@@ -2,7 +2,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "transliteration";
-import { Category, Subcategory } from "@/types";
+import { Article, Category, Subcategory } from "@/types";
 
 const useCategoryState = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -171,16 +171,28 @@ const useCategoryState = () => {
             )
           );
         } else if (type === "category") {
+          const { error: articlesError } = await supabase
+            .from("articles")
+            .update({ category_id: null, subcategory_id: null })
+            .eq("category_id", category.id);
+          if (articlesError) throw articlesError;
+
+          const { error: subcategoriesError } = await supabase
+            .from("subcategories")
+            .delete()
+            .eq("category_id", category.id);
+          if (subcategoriesError) throw subcategoriesError;
+
           const { error } = await supabase
             .from("categories")
             .delete()
             .eq("id", category.id);
+          if (error) throw error;
           // also delete image
           console.log({ category });
           // get last file name from "https://bddvcuswobczqbyjlevs.supabase.co/storage/v1/object/public/images/categories/1737470923362_ii-raaj-caaliisaa"
           const imageUrl = category.image_url.split("/").slice(-1)[0];
           try {
-            console.log({ imageUrl });
             await supabase.storage
               .from("images")
               .remove([`categories/${imageUrl}`]);
