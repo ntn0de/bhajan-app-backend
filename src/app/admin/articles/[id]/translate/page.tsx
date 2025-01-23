@@ -3,7 +3,7 @@
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Language, ArticleTranslation } from "@/types";
+import { Language, ArticleTranslation, Article } from "@/types";
 import dynamic from "next/dynamic";
 
 const Editor = dynamic(() => import("@/components/TextEditor"), {

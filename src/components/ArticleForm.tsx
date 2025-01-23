@@ -153,9 +153,21 @@ export default function ArticleForm({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
-    if (!formData.title || !formData.description || !formData.categoryId) {
-      alert("Please fill in all required fields.");
+    // Debug logging
+    console.log('Form Data:', {
+      title: formData.title,
+      description: formData.description,
+      categoryId: formData.categoryId
+    });
+
+    // Validate required fields with detailed checks
+    const missingFields = [];
+    if (!formData.title.trim()) missingFields.push('Title');
+    if (!formData.description.trim()) missingFields.push('Content');
+    if (!formData.categoryId) missingFields.push('Category');
+
+    if (missingFields.length > 0) {
+      alert(`Please fill in the following required fields: ${missingFields.join(', ')}`);
       return;
     }
 
@@ -241,22 +253,24 @@ export default function ArticleForm({
         </div>
       )}
 
-      {/* Language Selection */}
-      <div>
-        <label className="block text-sm font-medium mb-2">Translations</label>
-        <select
-          value={selectedLanguage}
-          onChange={(e) => setSelectedLanguage(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black mb-4"
-        >
-          <option value="">Select a language for translation</option>
-          {languages.map((language) => (
-            <option key={language.id} value={language.id}>
-              {language.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Language Selection - Only show when editing */}
+      {initialData.id && (
+        <div>
+          <label className="block text-sm font-medium mb-2">Translations</label>
+          <select
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black mb-4"
+          >
+            <option value="">Select a language for translation</option>
+            {languages.map((language) => (
+              <option key={language.id} value={language.id}>
+                {language.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Description Editor */}
       <div>

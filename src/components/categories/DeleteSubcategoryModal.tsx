@@ -1,14 +1,14 @@
 "use client";
 
-// Modal for deleting categories
-export function DeleteCategoryModal({
-  categoryName,
+// Modal for deleting subcategories
+export function DeleteSubcategoryModal({
+  subcategoryName,
   onClose,
   onConfirm,
   isOpen,
   isLoading,
 }: {
-  categoryName: string;
+  subcategoryName: string;
   onClose: () => void;
   onConfirm: () => void;
   isOpen: boolean;
@@ -20,7 +20,7 @@ export function DeleteCategoryModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg w-full max-w-md dark:bg-gray-800">
         <h2 className="text-xl font-semibold mb-4">
-          Are you sure you want to delete {categoryName}?
+          Are you sure you want to delete {subcategoryName}?
         </h2>
         <div className="flex justify-end space-x-3">
           <button
@@ -35,7 +35,7 @@ export function DeleteCategoryModal({
             disabled={isLoading}
             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
           >
-            {isLoading ? "Deleting..." : "Delete Category"}
+            {isLoading ? "Deleting..." : "Delete Subcategory"}
           </button>
         </div>
       </div>

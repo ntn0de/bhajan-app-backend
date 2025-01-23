@@ -15,11 +15,16 @@ export default function CategoryManagement() {
     deleteModalOpen,
     newSubcategory,
     isLoading,
+    languages,
+    selectedLanguage,
+    translations,
     actions: {
       setNewCategory,
       setSelectedCategory,
       setNewSubcategory,
       setDeleteModalOpen,
+      setSelectedLanguage,
+      setTranslations,
       fetchCategories,
       handleAddCategory,
       handleAddSubcategory,
@@ -43,7 +48,7 @@ export default function CategoryManagement() {
           <form onSubmit={handleAddCategory} className="space-y-4 flex-1">
             <div>
               <label className="block text-sm font-medium mb-1">
-                Category Name
+                Category Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -57,71 +62,62 @@ export default function CategoryManagement() {
               />
             </div>
 
+
+
             <div>
               <label className="block text-sm font-medium mb-1">
-                Image {!newCategory.name && "(Type category name first)"}
+                Category Image
               </label>
-              <div className="mt-2">
-                <label
-                  className={`px-4 py-2 text-white rounded hover:bg-blue-700 cursor-pointer inline-block ${
-                    !newCategory.name || isLoading
-                      ? "bg-gray-400 opacity-50"
-                      : "bg-blue-600"
-                  }`}
-                >
-                  Upload Image
-                  <input
-                    type="file"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    disabled={!newCategory.name || isLoading}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full"
+                disabled={isLoading || !newCategory.name}
+              />
+              {newCategory.image_url && (
+                <div className="mt-2">
+                  <Image
+                    src={newCategory.image_url}
+                    alt="Category preview"
+                    width={100}
+                    height={100}
+                    className="rounded"
                   />
-                </label>
-              </div>
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={!newCategory.image_url || isLoading}
-              className={`px-4 py-2 text-white rounded ${
-                !newCategory.image_url || isLoading
-                  ? "bg-gray-400 opacity-50"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              disabled={isLoading || !newCategory.name}
             >
               {isLoading ? "Adding..." : "Add Category"}
             </button>
           </form>
-
-          {/* Image Preview */}
-          {newCategory.image_url && (
-            <div className="flex-shrink-0 flex items-center">
-              <Image
-                src={newCategory.image_url}
-                alt="Category preview"
-                width={200}
-                height={200}
-                className="w-32 h-32 object-cover rounded-lg"
-              />
-            </div>
-          )}
         </div>
       </div>
 
       {/* Categories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {categories.map((category) => (
           <CategoryCard
             key={category.id}
             category={category}
-            onAddSubcategory={() => setSelectedCategory(category)}
-            onDeleteCategory={() => {
+            onAddSubcategory={() => {
               setSelectedCategory(category);
-              setDeleteModalOpen(true);
+              setNewSubcategory({ name: "" });
+              setDeleteModalOpen(false);
             }}
-            onDeleteSubcategory={(subId) =>
-              handleDelete("subcategory", subId, category)
-            }
+            onDelete={(type, subId) => {
+              if (type === "category") {
+                setSelectedCategory(category);
+                setDeleteModalOpen(true);
+              } else if (type === "subcategory" && subId) {
+                handleDelete(type, subId, category);
+              }
+            }}
             isLoading={isLoading}
           />
         ))}
@@ -131,25 +127,24 @@ export default function CategoryManagement() {
       {selectedCategory && !deleteModalOpen && (
         <AddSubcategoryModal
           category={selectedCategory}
-          subcategory={newSubcategory}
           onClose={() => setSelectedCategory(null)}
-          onSubmit={handleAddSubcategory}
+          subcategory={newSubcategory}
           onChange={(value) => setNewSubcategory({ name: value })}
+          onSubmit={handleAddSubcategory}
           isLoading={isLoading}
         />
       )}
 
-      {selectedCategory && deleteModalOpen && (
-        <DeleteCategoryModal
-          category={selectedCategory}
-          onClose={() => {
-            setSelectedCategory(null);
-            setDeleteModalOpen(false);
-          }}
-          onDelete={() => handleDelete("category", "", selectedCategory)}
-          isLoading={isLoading}
-        />
-      )}
+      <DeleteCategoryModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={() =>
+          selectedCategory &&
+          handleDelete("category", "", selectedCategory)
+        }
+        categoryName={selectedCategory?.name || ""}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

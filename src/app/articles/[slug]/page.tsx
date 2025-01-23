@@ -15,23 +15,29 @@ export default function ArticlePage({
 
   useEffect(() => {
     async function fetchArticle() {
-      const { data: article, error } = await supabase
-        .from("articles")
-        .select(`
-          *,
-          translations:article_translations(language_id, title, description),
-          languages:article_translations(languages(*))
-        `)
-        .eq("slug", params.slug)
-        .single();
+      try {
+        const { data: article, error } = await supabase
+          .from("articles")
+          .select(`
+            *,
+            translations:article_translations(language_id, title, description),
+            languages:article_translations(languages(*))
+          `)
+          .eq("slug", params.slug)
+          .single();
 
-      if (error || !article) {
+        if (error || !article) {
+          notFound();
+          return;
+        }
+
+        setArticle(article);
+      } catch (error) {
+        console.error("Error fetching article:", error);
         notFound();
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      setArticle(article);
-      setLoading(false);
     }
 
     fetchArticle();
@@ -75,8 +81,12 @@ export default function ArticlePage({
         <header className="mb-8">
           <h1 className="text-4xl font-bold mb-4">{currentContent.title}</h1>
           <div className="flex items-center text-gray-600 space-x-4">
-            <span>By {article.author?.full_name}</span>
-            <span>•</span>
+            {article.author?.full_name && (
+              <>
+                <span>By {article.author.full_name}</span>
+                <span>•</span>
+              </>
+            )}
             <span>{new Date(article.created_at).toLocaleDateString()}</span>
           </div>
         </header>

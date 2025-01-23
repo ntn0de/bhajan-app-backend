@@ -1,7 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "transliteration";
-import { Category, Subcategory } from "@/types";
+import { Category, Language, Subcategory } from "@/types";
+
+const handleError = (message: string, error: any) => {
+  console.error(`${message}:`, error);
+};
+
+
 
 const useCategoryState = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -12,36 +18,9 @@ const useCategoryState = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [newSubcategory, setNewSubcategory] = useState({ name: "" });
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleError = (message: string, error: any) => {
-    console.error(`${message}:`, error);
-  };
-
-  const fetchCategories = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("categories")
-        .select(
-          `
-          *,
-          subcategories (
-            id,
-            name,
-            slug
-          )
-        `
-        )
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      handleError("Error fetching categories", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
+  const [translations, setTranslations] = useState<Record<string, { name: string }>>({});
 
   const uploadImage = useCallback(async (file: File, categoryName: string) => {
     const categoryNameSlug = slugify(categoryName);
@@ -79,31 +58,94 @@ const useCategoryState = () => {
     [newCategory.name, uploadImage]
   );
 
+
+  // Fetch languages
+  useEffect(() => {
+    async function fetchLanguages() {
+      const { data, error } = await supabase
+        .from("languages")
+        .select("*")
+        .eq("is_active", true);
+
+      if (error) {
+        handleError("Error fetching languages", error);
+        return;
+      }
+
+      setLanguages(data || []);
+    }
+
+    fetchLanguages();
+  }, []);
+
+  // Fetch categories with translations
+  const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select(
+          `
+          *,
+          translations:category_translations(language_id, name),
+          subcategories (id, name, slug, translations:category_translations(language_id, name))
+        `
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      handleError("Error fetching categories", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const handleAddCategory = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       setIsLoading(true);
 
       try {
-        const { error } = await supabase.from("categories").insert([
-          {
+        // First insert the category
+        const { data: categoryData, error: categoryError } = await supabase
+          .from("categories")
+          .insert([{
             name: newCategory.name,
             slug: slugify(newCategory.name),
             image_url: newCategory.image_url,
-          },
-        ]);
+          }])
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (categoryError) throw categoryError;
+
+        // Then insert translations if any
+        if (Object.keys(translations).length > 0) {
+          const translationData = Object.entries(translations).map(([languageId, content]) => ({
+            category_id: categoryData.id,
+            language_id: languageId,
+            name: content.name,
+          }));
+
+          const { error: translationError } = await supabase
+            .from("category_translations")
+            .insert(translationData);
+
+          if (translationError) throw translationError;
+        }
 
         await fetchCategories();
         setNewCategory({ name: "", image_url: "" });
+        setTranslations({});
       } catch (error) {
         handleError("Error adding category", error);
       } finally {
         setIsLoading(false);
       }
     },
-    [newCategory, fetchCategories]
+    [newCategory, translations, fetchCategories]
   );
 
   const handleAddSubcategory = useCallback(
@@ -113,39 +155,54 @@ const useCategoryState = () => {
 
       setIsLoading(true);
       try {
-        const newSubcategoryData = {
-          name: newSubcategory.name,
-          slug: slugify(newSubcategory.name),
-          category_id: selectedCategory.id,
-        };
-
-        const { data, error } = await supabase
+        // First insert the subcategory
+        const { data: subcategoryData, error: subcategoryError } = await supabase
           .from("subcategories")
-          .insert([newSubcategoryData])
+          .insert([{
+            name: newSubcategory.name,
+            slug: slugify(newSubcategory.name),
+            category_id: selectedCategory.id,
+          }])
           .select()
           .single();
 
-        if (error) throw error;
+        if (subcategoryError) throw subcategoryError;
+
+        // Then insert translations if any
+        if (Object.keys(translations).length > 0) {
+          const translationData = Object.entries(translations).map(([languageId, content]) => ({
+            subcategory_id: subcategoryData.id,
+            language_id: languageId,
+            name: content.name,
+          }));
+
+          const { error: translationError } = await supabase
+            .from("category_translations")
+            .insert(translationData);
+
+          if (translationError) throw translationError;
+        }
 
         setCategories((prev) =>
           prev.map((cat) =>
             cat.id === selectedCategory.id
               ? {
                   ...cat,
-                  subcategories: [...(cat.subcategories || []), data],
+                  subcategories: [...(cat.subcategories || []), subcategoryData],
                 }
               : cat
           )
         );
         setNewSubcategory({ name: "" });
         setSelectedCategory(null);
+        setTranslations({});
       } catch (error) {
         handleError("Error adding subcategory", error);
       } finally {
         setIsLoading(false);
       }
     },
-    [newSubcategory.name, selectedCategory]
+    [newSubcategory.name, selectedCategory, translations]
   );
 
   const handleDelete = useCallback(
@@ -233,11 +290,16 @@ const useCategoryState = () => {
     deleteModalOpen,
     newSubcategory,
     isLoading,
+    languages,
+    selectedLanguage,
+    translations,
     actions: {
       setNewCategory,
       setSelectedCategory,
       setNewSubcategory,
       setDeleteModalOpen,
+      setSelectedLanguage,
+      setTranslations,
       fetchCategories,
       handleAddCategory,
       handleAddSubcategory,

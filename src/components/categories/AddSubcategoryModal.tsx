@@ -1,5 +1,7 @@
 "use client";
-import { Category } from "@/types";
+import { useState, useEffect } from "react";
+import { Category, Language } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 // Modal for adding subcategories
 export function AddSubcategoryModal({
@@ -21,12 +23,13 @@ export function AddSubcategoryModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg w-full max-w-md dark:bg-gray-800">
         <h2 className="text-xl font-semibold mb-4">
-          Add Subcategory to {category.name}
+          Add Subcategory to {category?.name || "Category"}
         </h2>
+
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Subcategory Name
+              Subcategory Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -37,12 +40,13 @@ export function AddSubcategoryModal({
               disabled={isLoading}
             />
           </div>
-          <div className="flex justify-end space-x-3">
+
+          <div className="flex justify-end gap-4">
             <button
               type="button"
               onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
               disabled={isLoading}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
             >
               Cancel
             </button>
