@@ -12,7 +12,10 @@ export default function ArticleManagement() {
   const fetchArticles = async () => {
     const { data, error } = await supabase
       .from("articles")
-      .select("*")
+      .select(`
+        *,
+        translations:article_translations(language_id, title)
+      `)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -43,7 +46,18 @@ export default function ArticleManagement() {
 
   async function deleteArticle(article: Article) {
     try {
-      await supabase.from("articles").delete().eq("id", article.id);
+      // First delete all translations
+      await supabase
+        .from("article_translations")
+        .delete()
+        .eq("article_id", article.id);
+
+      // Then delete the article
+      await supabase
+        .from("articles")
+        .delete()
+        .eq("id", article.id);
+
       fetchArticles();
     } catch (error) {
       console.error("Error deleting article:", error);
@@ -67,7 +81,27 @@ export default function ArticleManagement() {
                 <Link href={`/articles/${article.slug}`}>{article.title}</Link>
               </h3>
               <p className="text-sm text-gray-500 mb-4">Slug: {article.slug}</p>
-
+              {article.translations && article.translations.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-500">Available translations:</p>
+                  <div className="flex gap-2 mt-1">
+                    {article.translations.map((translation: any) => (
+                      <span
+                        key={translation.language_id}
+                        className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded"
+                      >
+                        {translation.title}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <Link
+                href={`/admin/articles/${article.id}/translate`}
+                className="text-blue-600 hover:text-blue-800 text-sm block mb-4"
+              >
+                Manage Translations
+              </Link>
               <label className="inline-flex items-center cursor-pointer relative ">
                 <input
                   type="checkbox"

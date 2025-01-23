@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
-import { Category, Subcategory } from "@/types";
+import { Category, Subcategory, Language, ArticleTranslation } from "@/types";
 import { slugify } from "transliteration";
 
 const Editor = dynamic(() => import("@/components/TextEditor"), {
@@ -19,6 +19,7 @@ interface ArticleFormProps {
     audioUrl: string;
     youtubeUrl: string;
     externalVideoUrl: string;
+    translations?: ArticleTranslation[];
   };
   onSubmit: (data: any) => Promise<void>;
   isSubmitting: boolean;
@@ -40,6 +41,9 @@ export default function ArticleForm({
 }: ArticleFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
+  const [translations, setTranslations] = useState<Record<string, { title: string; description: string }>>({});
   const [formData, setFormData] = useState({
     ...initialData,
     title: initialData.title || "",
@@ -50,6 +54,37 @@ export default function ArticleForm({
     youtubeUrl: initialData.youtubeUrl || "",
     externalVideoUrl: initialData.externalVideoUrl || "",
   });
+
+  // Fetch languages
+  useEffect(() => {
+    async function fetchLanguages() {
+      const { data, error } = await supabase
+        .from("languages")
+        .select("*")
+        .eq("is_active", true);
+
+      if (error) {
+        console.error("Error fetching languages:", error);
+        return;
+      }
+
+      setLanguages(data || []);
+
+      // Initialize translations from initialData if available
+      if (initialData?.translations) {
+        const translationsMap: Record<string, { title: string; description: string }> = {};
+        initialData.translations.forEach((translation) => {
+          translationsMap[translation.language_id] = {
+            title: translation.title,
+            description: translation.description,
+          };
+        });
+        setTranslations(translationsMap);
+      }
+    }
+
+    fetchLanguages();
+  }, [initialData]);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -127,6 +162,11 @@ export default function ArticleForm({
     onSubmit({
       ...formData,
       slug: slugify(formData.title),
+      translations: Object.entries(translations).map(([languageId, content]) => ({
+        language_id: languageId,
+        title: content.title,
+        description: content.description,
+      })),
     });
   };
 
@@ -140,14 +180,26 @@ export default function ArticleForm({
       {/* Title Input */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Title <span className="text-red-500">*</span>
+          Title {!selectedLanguage && <span className="text-red-500">*</span>}
         </label>
         <input
           type="text"
-          value={formData.title}
-          onChange={(e) => handleChange("title", e.target.value)}
+          value={selectedLanguage ? translations[selectedLanguage]?.title || "" : formData.title}
+          onChange={(e) => {
+            if (selectedLanguage) {
+              setTranslations(prev => ({
+                ...prev,
+                [selectedLanguage]: {
+                  title: e.target.value,
+                  description: translations[selectedLanguage]?.description || "",
+                },
+              }));
+            } else {
+              handleChange("title", e.target.value);
+            }
+          }}
           className="w-full px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black"
-          required
+          required={!selectedLanguage}
         />
       </div>
       {/* Category Selection */}
@@ -189,14 +241,43 @@ export default function ArticleForm({
         </div>
       )}
 
+      {/* Language Selection */}
+      <div>
+        <label className="block text-sm font-medium mb-2">Translations</label>
+        <select
+          value={selectedLanguage}
+          onChange={(e) => setSelectedLanguage(e.target.value)}
+          className="w-full px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black mb-4"
+        >
+          <option value="">Select a language for translation</option>
+          {languages.map((language) => (
+            <option key={language.id} value={language.id}>
+              {language.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Description Editor */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Content <span className="text-red-500">*</span>
+          Content {!selectedLanguage && <span className="text-red-500">*</span>}
         </label>
         <Editor
-          value={formData.description}
-          onChange={(content) => handleChange("description", content)}
+          value={selectedLanguage ? translations[selectedLanguage]?.description || "" : formData.description}
+          onChange={(content) => {
+            if (selectedLanguage) {
+              setTranslations(prev => ({
+                ...prev,
+                [selectedLanguage]: {
+                  title: translations[selectedLanguage]?.title || "",
+                  description: content,
+                },
+              }));
+            } else {
+              handleChange("description", content);
+            }
+          }}
           className="min-h-[400px]"
         />
       </div>

@@ -1,42 +1,79 @@
+"use client";
+
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
+import { useState, useEffect } from "react";
 
-async function getArticle(slug: string) {
-  const { data: article, error } = await supabase
-    .from("articles")
-    .select(
-      `
-      *
-    `
-    )
-    .eq("slug", slug)
-    .single();
-
-  if (error || !article) {
-    return null;
-  }
-
-  return article;
-}
-
-export default async function ArticlePage({
+export default function ArticlePage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  // console.log({params})
-  const { slug } = await params;
-  const article = await getArticle(slug);
+  const [article, setArticle] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
+
+  useEffect(() => {
+    async function fetchArticle() {
+      const { data: article, error } = await supabase
+        .from("articles")
+        .select(`
+          *,
+          translations:article_translations(language_id, title, description),
+          languages:article_translations(languages(*))
+        `)
+        .eq("slug", params.slug)
+        .single();
+
+      if (error || !article) {
+        notFound();
+        return;
+      }
+
+      setArticle(article);
+      setLoading(false);
+    }
+
+    fetchArticle();
+  }, [params.slug]);
+
+  if (loading) {
+    return <div className="container mx-auto py-8 px-4">Loading...</div>;
+  }
 
   if (!article) {
-    notFound();
+    return notFound();
   }
+
+  // Find the selected translation or use the original content
+  const currentContent = selectedLanguage
+    ? article.translations?.find((t: any) => t.language_id === selectedLanguage)
+    : article;
+
+  // Get unique languages from translations
+  const availableLanguages = article.languages?.filter((l: any) => l.languages?.is_active) || [];
 
   return (
     <div className="container mx-auto py-8 px-4">
       <article className="max-w-4xl mx-auto">
+        {availableLanguages.length > 0 && (
+          <div className="mb-6">
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="px-3 py-2 border rounded-lg dark:border-gray-700 dark:text-black"
+            >
+              <option value="">Original Language</option>
+              {availableLanguages.map((lang: any) => (
+                <option key={lang.languages.id} value={lang.languages.id}>
+                  {lang.languages.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <header className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">{article.title}</h1>
+          <h1 className="text-4xl font-bold mb-4">{currentContent.title}</h1>
           <div className="flex items-center text-gray-600 space-x-4">
             <span>By {article.author?.full_name}</span>
             <span>•</span>
@@ -46,7 +83,7 @@ export default async function ArticlePage({
 
         <div
           className="prose max-w-none mb-8"
-          dangerouslySetInnerHTML={{ __html: article.description }}
+          dangerouslySetInnerHTML={{ __html: currentContent.description }}
         />
 
         {/* Media Section */}
@@ -57,9 +94,7 @@ export default async function ArticlePage({
             {article.youtube_url && (
               <div className="aspect-video">
                 <iframe
-                  src={`https://www.youtube.com/embed/${
-                    article.youtube_url.split("v=")[1]
-                  }`}
+                  src={`https://www.youtube.com/embed/${article.youtube_url.split("v=")[1]}`}
                   className="w-full h-full"
                   allowFullScreen
                 />
