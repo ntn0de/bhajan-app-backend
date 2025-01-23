@@ -2,11 +2,13 @@
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function AdminNav(loggedIn: boolean) {
+export default function AdminNav() {
   const [user, setUser] = useState<any>(null);
   // on mount init supabase
   const supabase = createClient();
+  const router = useRouter();
   async function signOut() {
     console.log("signing out");
     const { error } = await supabase.auth.signOut();
@@ -14,6 +16,7 @@ export default function AdminNav(loggedIn: boolean) {
       console.log(error);
     } else {
       setUser(null);
+      router.push("/");
     }
   }
   useEffect(() => {
