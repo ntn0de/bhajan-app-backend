@@ -3,12 +3,14 @@
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import { useState, useEffect } from "react";
+import { use } from "react";
 
 export default function ArticlePage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = use(params);
   const [article, setArticle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
@@ -23,7 +25,7 @@ export default function ArticlePage({
             translations:article_translations(language_id, title, description),
             languages:article_translations(languages(*))
           `)
-          .eq("slug", params.slug)
+          .eq("slug", slug)
           .single();
 
         if (error || !article) {
@@ -41,7 +43,7 @@ export default function ArticlePage({
     }
 
     fetchArticle();
-  }, [params.slug]);
+  }, [slug]);
 
   if (loading) {
     return <div className="container mx-auto py-8 px-4">Loading...</div>;

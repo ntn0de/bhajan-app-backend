@@ -1,77 +1,40 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { Article } from "@/types";
 import Link from "next/link";
+import { fetchArticles, deleteArticle, updateArticle } from "@/utils/articles";
 
 export default function ArticleManagement() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch articles
-  const fetchArticles = async () => {
+  const loadArticles = async () => {
     try {
-      const { data, error } = await supabase
-        .from("articles")
-        .select(`
-          *,
-          translations:article_translations(language_id, title)
-        `)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching articles:", error);
-        return;
-      }
-      setArticles(data || []);
-    } catch (error) {
-      console.error("Error fetching articles:", error);
+      const data = await fetchArticles();
+      setArticles(data);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchArticles();
+    loadArticles();
   }, []);
 
   // Toggle is_featured status
   const toggleFeatured = async (article: Article) => {
-    try {
-      const { error } = await supabase
-        .from("articles")
-        .update({ is_featured: !article.is_featured })
-        .eq("id", article.id);
-
-      if (error) {
-        console.error("Error updating article:", error);
-        return;
-      }
-
-      fetchArticles();
-    } catch (error) {
-      console.error("Error updating article:", error);
+    const success = await updateArticle(article.id, { is_featured: !article.is_featured });
+    if (success) {
+      loadArticles();
     }
   };
 
-  async function deleteArticle(article: Article) {
-    try {
-      // First delete all translations
-      await supabase
-        .from("article_translations")
-        .delete()
-        .eq("article_id", article.id);
-
-      // Then delete the article
-      await supabase
-        .from("articles")
-        .delete()
-        .eq("id", article.id);
-
-      fetchArticles();
-    } catch (error) {
-      console.error("Error deleting article:", error);
+  async function handleDeleteArticle(article: Article) {
+    const success = await deleteArticle(article.id);
+    if (success) {
+      loadArticles();
     }
   }
 
