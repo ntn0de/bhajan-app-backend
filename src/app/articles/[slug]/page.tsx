@@ -12,8 +12,6 @@ async function getArticle(slug: string) {
     .eq("slug", slug)
     .single();
 
-  console.log({ article, error });
-
   if (error || !article) {
     return null;
   }

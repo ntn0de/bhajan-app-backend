@@ -23,7 +23,9 @@ export function CategoryCard({
           <p className="text-sm text-gray-500 mb-4">Slug: {category.slug}</p>
 
           <div className="mb-4">
-            <h4 className="font-medium mb-2">Subcategories:</h4>
+            {category.subcategories?.length > 0 && (
+              <h4 className="font-medium mb-2">Subcategories:</h4>
+            )}
             <ul className="list-disc pl-5 space-y-1">
               {category.subcategories?.map((sub) => (
                 <li key={sub.id} className="text-sm">

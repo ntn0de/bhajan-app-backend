@@ -67,9 +67,6 @@ export default async function CategoryPage({
             >
               <div className="p-6">
                 <h3 className="text-xl font-semibold mb-2">{article.title}</h3>
-                <p className="text-gray-600 mb-4 line-clamp-3">
-                  {article.description.substring(0, 150)}...
-                </p>
                 <span className="text-blue-600">Read more →</span>
               </div>
             </Link>
