@@ -6,30 +6,43 @@ import { useRouter } from "next/navigation";
 
 export default function AdminNav() {
   const [user, setUser] = useState<any>(null);
-  // on mount init supabase
   const supabase = createClient();
   const router = useRouter();
+
   async function signOut() {
-    console.log("signing out");
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.log(error);
+      console.error("Error signing out:", error);
     } else {
-      setUser(null);
       router.push("/");
     }
   }
+
   useEffect(() => {
-    async function getUser() {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        console.log(error);
-      } else {
-        setUser(data);
+    const getUser = async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (data)
+          // Only set the user if data exists
+          setUser(data?.user || null);
+      } catch (err) {
+        console.error("Error fetching user:", err);
       }
-    }
+    };
+
     getUser();
-  }, []);
+
+    // Auth state listener to update on login/logout
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   return (
     <nav className="bg-gray-800 text-white p-4">
@@ -38,7 +51,6 @@ export default function AdminNav() {
           Home
         </Link>
         <div className="space-x-6">
-          {/* check if logged in */}
           {!user ? (
             <Link href="/login" className="hover:text-gray-300">
               Login
@@ -54,7 +66,7 @@ export default function AdminNav() {
               <Link href="/admin/articles/new" className="hover:text-gray-300">
                 New Article
               </Link>
-              <button onClick={() => signOut()} className="hover:text-gray-300">
+              <button onClick={signOut} className="hover:text-gray-300">
                 Logout
               </button>
             </>
