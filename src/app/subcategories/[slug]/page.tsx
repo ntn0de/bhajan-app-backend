@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Article, Subcategory } from "@/types";
+import { handleError } from '@/utils/error';
 
 async function getSubCategoryWithContent(slug: string) {
   const { data: category, error } = await supabase
@@ -31,6 +32,7 @@ export default async function SubCategoryPage({
   const subcategory = await getSubCategoryWithContent(slug);
 
   if (!subcategory) {
+    handleError('Error fetching subcategory', new Error('Subcategory not found'));
     notFound();
   }
 

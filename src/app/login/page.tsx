@@ -2,6 +2,8 @@
 import { useRouter } from "next/navigation";
 import { login } from "./actions";
 import { createClient } from "@/utils/supabase/client";
+import { handleError } from "@/utils/error";
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,8 +22,8 @@ export default function LoginPage() {
     });
 
     if (error) {
-      console.error("Error logging in:", error);
-      router.push("/error");
+      handleError('Error logging in', error);
+      router.push('/error');
     } else {
       router.push("/");
     }

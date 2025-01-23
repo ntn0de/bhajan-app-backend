@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import { handleError } from "@/utils/error";
 import { notFound } from "next/navigation";
 import { useState, useEffect } from "react";
 import { use } from "react";
@@ -35,7 +36,7 @@ export default function ArticlePage({
 
         setArticle(article);
       } catch (error) {
-        console.error("Error fetching article:", error);
+        handleError('Error fetching article', error);
         notFound();
       } finally {
         setLoading(false);

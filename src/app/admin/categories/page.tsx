@@ -6,6 +6,7 @@ import { CategoryCard } from "../../../components/categories/CategoryCard";
 import { AddSubcategoryModal } from "../../../components/categories/AddSubcategoryModal";
 import { DeleteCategoryModal } from "../../../components/categories/DeleteCategoryModal";
 import useCategoryState from "@/hooks/useCategoryState";
+import { handleError } from '@/utils/error';
 
 export default function CategoryManagement() {
   const {

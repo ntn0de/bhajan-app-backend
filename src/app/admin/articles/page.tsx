@@ -5,6 +5,7 @@ import { Article } from "@/types";
 import Link from "next/link";
 import { fetchArticles, deleteArticle, updateArticle } from "@/utils/articles";
 
+
 export default function ArticleManagement() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);

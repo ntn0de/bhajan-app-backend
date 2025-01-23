@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Language } from '@/types';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from "react";
+import { Language } from "@/types";
+import { supabase } from "@/lib/supabase";
+import { handleError } from "@/utils/error";
 
 export default function LanguagesPage() {
   const [languages, setLanguages] = useState<Language[]>([]);
   const [newLanguage, setNewLanguage] = useState({
-    code: '',
-    name: '',
+    code: "",
+    name: "",
     is_default: false,
-    is_active: true
+    is_active: true,
   });
 
   useEffect(() => {
@@ -19,12 +20,12 @@ export default function LanguagesPage() {
 
   const fetchLanguages = async () => {
     const { data, error } = await supabase
-      .from('languages')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("languages")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error('Error fetching languages:', error);
+      handleError("Error fetching languages", error);
       return;
     }
 
@@ -35,37 +36,39 @@ export default function LanguagesPage() {
     e.preventDefault();
 
     const { data, error } = await supabase
-      .from('languages')
-      .insert([{
-        code: newLanguage.code,
-        name: newLanguage.name,
-        is_default: newLanguage.is_default,
-        is_active: newLanguage.is_active
-      }])
+      .from("languages")
+      .insert([
+        {
+          code: newLanguage.code,
+          name: newLanguage.name,
+          is_default: newLanguage.is_default,
+          is_active: newLanguage.is_active,
+        },
+      ])
       .select();
 
     if (error) {
-      console.error('Error adding language:', error);
+      handleError("Error adding language", error);
       return;
     }
 
     setNewLanguage({
-      code: '',
-      name: '',
+      code: "",
+      name: "",
       is_default: false,
-      is_active: true
+      is_active: true,
     });
     fetchLanguages();
   };
 
   const toggleLanguageStatus = async (language: Language) => {
     const { error } = await supabase
-      .from('languages')
+      .from("languages")
       .update({ is_active: !language.is_active })
-      .eq('id', language.id);
+      .eq("id", language.id);
 
     if (error) {
-      console.error('Error updating language:', error);
+      handleError("Error updating language", error);
       return;
     }
 
@@ -78,11 +81,15 @@ export default function LanguagesPage() {
 
       <form onSubmit={handleSubmit} className="mb-8 space-y-4 max-w-md">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Language Code</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Language Code
+          </label>
           <input
             type="text"
             value={newLanguage.code}
-            onChange={(e) => setNewLanguage({ ...newLanguage, code: e.target.value })}
+            onChange={(e) =>
+              setNewLanguage({ ...newLanguage, code: e.target.value })
+            }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             placeholder="en"
             required
@@ -90,11 +97,15 @@ export default function LanguagesPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Language Name</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Language Name
+          </label>
           <input
             type="text"
             value={newLanguage.name}
-            onChange={(e) => setNewLanguage({ ...newLanguage, name: e.target.value })}
+            onChange={(e) =>
+              setNewLanguage({ ...newLanguage, name: e.target.value })
+            }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             placeholder="English"
             required
@@ -107,10 +118,17 @@ export default function LanguagesPage() {
               type="checkbox"
               id="is_default"
               checked={newLanguage.is_default}
-              onChange={(e) => setNewLanguage({ ...newLanguage, is_default: e.target.checked })}
+              onChange={(e) =>
+                setNewLanguage({ ...newLanguage, is_default: e.target.checked })
+              }
               className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
             />
-            <label htmlFor="is_default" className="ml-2 block text-sm text-gray-900">Default Language</label>
+            <label
+              htmlFor="is_default"
+              className="ml-2 block text-sm text-gray-900"
+            >
+              Default Language
+            </label>
           </div>
 
           <div className="flex items-center">
@@ -118,10 +136,17 @@ export default function LanguagesPage() {
               type="checkbox"
               id="is_active"
               checked={newLanguage.is_active}
-              onChange={(e) => setNewLanguage({ ...newLanguage, is_active: e.target.checked })}
+              onChange={(e) =>
+                setNewLanguage({ ...newLanguage, is_active: e.target.checked })
+              }
               className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
             />
-            <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">Active</label>
+            <label
+              htmlFor="is_active"
+              className="ml-2 block text-sm text-gray-900"
+            >
+              Active
+            </label>
           </div>
         </div>
 
@@ -137,10 +162,7 @@ export default function LanguagesPage() {
         <h2 className="text-xl font-semibold mb-4">Supported Languages</h2>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {languages.map((language) => (
-            <div
-              key={language.id}
-              className="border rounded-lg p-4 shadow-sm"
-            >
+            <div key={language.id} className="border rounded-lg p-4 shadow-sm">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-medium">{language.name}</h3>
@@ -154,9 +176,13 @@ export default function LanguagesPage() {
                   )}
                   <button
                     onClick={() => toggleLanguageStatus(language)}
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${language.is_active ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      language.is_active
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
                   >
-                    {language.is_active ? 'Active' : 'Inactive'}
+                    {language.is_active ? "Active" : "Inactive"}
                   </button>
                 </div>
               </div>
